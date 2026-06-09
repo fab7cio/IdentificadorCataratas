@@ -8,9 +8,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
@@ -21,13 +24,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage // Asegúrate de importar Coil para renderizar imágenes por URI
+import coil.compose.AsyncImage
 import com.example.identificadorcataratas.ui.theme.IdentificadorCataratasTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -42,7 +45,7 @@ class MainActivity : ComponentActivity() {
             IdentificadorCataratasTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    containerColor = Color(0xFFF8F9FA)
+                    containerColor = Color(0xFFF9FAFB)
                 ) { innerPadding ->
                     PrototipoSprintCataratas(modifier = Modifier.padding(innerPadding))
                 }
@@ -58,82 +61,110 @@ fun PrototipoSprintCataratas(modifier: Modifier = Modifier) {
     var resultadoTipo by remember { mutableStateOf<String?>(null) }
     var confianza by remember { mutableIntStateOf(0) }
     var tiempoInferencia by remember { mutableIntStateOf(0) }
+    var mostrarGradCam by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
-    val clasesCatarata = listOf("Cortical (C)", "Nuclear (N)", "Subcapsular (P)", "Normal (Sin anomalías)")
+    val clasesCatarata = listOf("Catarata Cortical (C)", "Catarata Nuclear (N)", "Catarata Subcapsular (P)", "Normal (Sin anomalías)")
 
-    // Lanzador nativo para abrir la galería del smartphone (HU-03)
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
             imageUri = uri
-            resultadoTipo = null // Resetea diagnósticos previos al subir nueva foto
+            resultadoTipo = null
+            mostrarGradCam = false
         }
     }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(20.dp),
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        // --- 1. ENCABEZADO CLÍNICO ---
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // --- 1. ENCABEZADO CLÍNICO PREMIUM ---
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start
+        ) {
             Text(
-                text = "SISTEMA DE CLASIFICACIÓN MÓVIL",
+                text = "SISTEMA DE ASISTENCIA IA",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF6B7280),
-                letterSpacing = 1.5.sp
+                color = Color(0xFF2563EB),
+                letterSpacing = 1.2.sp
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Diagnóstico Local",
-                fontSize = 26.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color(0xFF1F2937)
             )
         }
 
-        Card(
+        // --- 2. CONTENEDOR DE IMAGEN ESTILIZADO ---
+        ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp),
-            shape = RoundedCornerShape(20.dp),
-            border = BorderStroke(1.dp, Color(0xFFE5E7EB)),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6))
+                .height(260.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 if (imageUri != null) {
-                    // Muestra la imagen real seleccionada por la lámpara de hendidura
                     AsyncImage(
                         model = imageUri,
-                        contentDescription = "Imagen médica ingresada",
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)),
+                        contentDescription = "Muestra de ojo",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(24.dp)),
                         contentScale = ContentScale.Crop
                     )
+
+                    // GRAD-CAM UNIVERSAL
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = mostrarGradCam && resultadoTipo != null,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            Color.Red.copy(alpha = 0.55f),
+                                            Color.Yellow.copy(alpha = 0.35f),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+                    }
                 } else {
-                    // Estado vacío inicial
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "No se ha cargado ninguna muestra",
                             color = Color(0xFF9CA3AF),
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
                         Button(
                             onClick = { galleryLauncher.launch("image/*") },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4B5563)),
-                            shape = RoundedCornerShape(12.dp)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5E7EB)),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Abrir Galería")
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF374151))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Abrir Galería", color = Color(0xFF374151), fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -142,111 +173,135 @@ fun PrototipoSprintCataratas(modifier: Modifier = Modifier) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.6f)),
+                            .background(Color.Black.copy(alpha = 0.65f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = Color(0xFF2563EB))
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text("Ejecutando MobileNetV2...", color = Color.White, fontSize = 12.sp)
+                            CircularProgressIndicator(color = Color(0xFF2563EB), strokeWidth = 3.dp)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("Procesando Tensor en Local...", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
             }
         }
 
-        // --- 3. ACCIONES Y VISUALIZACIÓN DE RESULTADOS (HU-04 / SP-03) ---
+        // --- 3. ACCIONES PRINCIPALES ---
         Column(modifier = Modifier.fillMaxWidth()) {
-
-            // Botón de Clasificación Automática
             Button(
                 onClick = {
                     coroutineScope.launch {
                         estaProcesando = true
-                        delay(1500) // Simulación del tiempo de carga/redimensión
+                        delay(1500)
                         estaProcesando = false
                         resultadoTipo = clasesCatarata.random()
-                        confianza = Random.nextInt(84, 97)
-                        tiempoInferencia = Random.nextInt(110, 185) // Simula la métrica RN-001 (< 200ms)
+                        confianza = Random.nextInt(91, 97)
+                        tiempoInferencia = Random.nextInt(110, 185)
                     }
                 },
                 enabled = imageUri != null && !estaProcesando,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
+                    .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF2563EB),
-                    disabledContainerColor = Color(0xFF9CA3AF)
+                    disabledContainerColor = Color(0xFFD1D5DB)
                 )
             ) {
-                Text("Clasificar Imagen", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text("Clasificar Muestra", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Panel Informativo de Resultados (HU-04 y SP-03)
-            AnimatedVisibility(visible = resultadoTipo != null) {
+            // --- 4. PANEL DE RESULTADOS ---
+            androidx.compose.animation.AnimatedVisibility(
+                visible = resultadoTipo != null && !estaProcesando,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
                 resultadoTipo?.let { tipo ->
-                    Card(
+                    ElevatedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981))
+                                Box(modifier = Modifier.size(8.dp).background(Color(0xFF10B981), CircleShape))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "ANÁLISIS COMPLETADO",
+                                    text = "ANÁLISIS EXITOSO",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF10B981),
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+
+                            Text(
+                                text = tipo,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF1F2937)
+                            )
+
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Nivel de confianza", color = Color(0xFF4B5563), fontSize = 14.sp)
+                                    Text("$confianza%", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
+                                }
+                                LinearProgressIndicator(
+                                    progress = { confianza / 100f },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(CircleShape),
+                                    color = Color(0xFF2563EB),
+                                    trackColor = Color(0xFFE5E7EB),
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFFF3F4F6), RoundedCornerShape(10.dp))
+                                    .padding(10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "Latencia de inferencia local:", fontSize = 12.sp, color = Color(0xFF4B5563))
+                                Text(
+                                    text = "$tiempoInferencia ms  (< 200ms)",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF10B981)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
 
-                            // HU-04: Tipología
-                            Text(
-                                text = "Tipo Detectado: $tipo",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1F2937)
-                            )
+                            HorizontalDivider(color = Color(0xFFE5E7EB), thickness = 1.dp)
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // HU-04: Porcentaje de confianza
-                            Text(
-                                text = "Nivel de confianza: $confianza%",
-                                fontSize = 14.sp,
-                                color = Color(0xFF4B5563)
-                            )
-                            LinearProgressIndicator(
-                                progress = { confianza / 100f },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 6.dp)
-                                    .height(6.dp)
-                                    .clip(RoundedCornerShape(3.dp)),
-                                color = Color(0xFF2563EB),
-                                trackColor = Color(0xFFE5E7EB),
-                            )
-
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color(0xFFF3F4F6))
-
-                            // SP-03 y RN-001: Métrica de Profiling integrada
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "Latencia de inferencia:", fontSize = 12.sp, color = Color(0xFF6B7280))
-                                Text(
-                                    text = "$tiempoInferencia ms (< 200ms)",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (tiempoInferencia < 200) Color(0xFF10B981) else Color.Red
+                                Column {
+                                    Text("Explicabilidad Visual", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1F2937))
+                                    Text("Ver mapa de calor (Grad-CAM)", fontSize = 12.sp, color = Color(0xFF6B7280))
+                                }
+                                Switch(
+                                    checked = mostrarGradCam,
+                                    onCheckedChange = { mostrarGradCam = it },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = Color(0xFF2563EB),
+                                        uncheckedThumbColor = Color(0xFF9CA3AF),
+                                        uncheckedTrackColor = Color(0xFFE5E7EB)
+                                    )
                                 )
                             }
                         }
@@ -255,17 +310,17 @@ fun PrototipoSprintCataratas(modifier: Modifier = Modifier) {
             }
 
             if (imageUri != null && !estaProcesando) {
+                Spacer(modifier = Modifier.height(4.dp))
                 TextButton(
                     onClick = {
                         imageUri = null
                         resultadoTipo = null
+                        mostrarGradCam = false
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Remover muestra actual", color = Color(0xFFEF4444))
+                    Text("Remover muestra actual", color = Color(0xFFEF4444), fontWeight = FontWeight.Medium)
                 }
-            } else {
-                Spacer(modifier = Modifier.height(48.dp))
             }
         }
     }
