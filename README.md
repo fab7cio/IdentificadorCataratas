@@ -6,7 +6,7 @@ Aplicación móvil desarrollada en Flutter para la clasificación automática de
 
 ## 📋 Descripción
 
-Esta herramienta permite a oftalmólogos cargar imágenes retinales y obtener un diagnóstico automático del tipo de catarata presente, con indicador de confianza y métricas de rendimiento en tiempo real.
+Esta herramienta permite a oftalmólogos cargar imágenes retinales y obtener un diagnóstico automático del tipo de catarata presente, con indicador de confianza, barras de probabilidad por clase y métricas de rendimiento en tiempo real. Soporta análisis de imagen individual y clasificación en lote de hasta 50 imágenes.
 
 ---
 
@@ -32,11 +32,14 @@ Esta herramienta permite a oftalmólogos cargar imágenes retinales y obtener un
 
 ## 📱 Funcionalidades
 
-- Carga de imágenes desde la galería del dispositivo
-- Clasificación automática con porcentaje de confianza
-- Indicador de velocidad de inferencia (< 200ms)
-- Monitoreo de uso de RAM en tiempo real
-- Interfaz clínica limpia y accesible
+- Carga de imagen individual desde galería
+- Clasificación en lote de hasta 50 imágenes
+- Diagnóstico con porcentaje de confianza y nivel (Alta / Moderada / Baja)
+- Barras de probabilidad para las 4 clases ordenadas de mayor a menor
+- Aviso de resultado no concluyente cuando la confianza es menor al 70%
+- Panel técnico individual: tiempos de preprocesamiento, inferencia, carga del modelo, RAM, fecha y hora
+- Panel técnico de lote: inferencia promedio, inferencia total, total de imágenes procesadas
+- Indicador de cumplimiento del umbral de latencia (< 200ms)
 
 ---
 
