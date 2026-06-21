@@ -1,1 +1,0 @@
- C:\\src\\app_identificador_cataratas\\.dart_tool\\flutter_build\\183fb6971ca164581dfd8d3374471bd4\\native_assets.json: 

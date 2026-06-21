@@ -25,19 +25,29 @@ class MyApp extends StatelessWidget {
 
 class ResultadoLote {
   final String nombreArchivo;
+  final String rutaArchivo;
   final String diagnostico;
   final double confianza;
   final String nivelConfianza;
   final bool noConcluyente;
   final int tiempoInferencia;
+  final int tiempoPreprocesamiento;
+  final int tiempoTotal;
+  final String tamanoImagen;
+  final String fechaHora;
 
   ResultadoLote({
     required this.nombreArchivo,
+    required this.rutaArchivo,
     required this.diagnostico,
     required this.confianza,
     required this.nivelConfianza,
     required this.noConcluyente,
     required this.tiempoInferencia,
+    required this.tiempoPreprocesamiento,
+    required this.tiempoTotal,
+    required this.tamanoImagen,
+    required this.fechaHora,
   });
 }
 
@@ -60,17 +70,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
-
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
-
     _controller.forward();
-
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -121,22 +127,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     borderRadius: BorderRadius.circular(75),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Image.asset(
-                        'assets/ojocatarata.png',
-                        fit: BoxFit.contain,
-                      ),
+                      child: Image.asset('assets/ojocatarata.png', fit: BoxFit.contain),
                     ),
                   ),
                 ),
                 const SizedBox(height: 40),
                 const Text(
                   'Identificador de Cataratas',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 10),
@@ -149,10 +147,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 const SizedBox(
                   width: 30,
                   height: 30,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2.5,
-                  ),
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                 ),
               ],
             ),
@@ -192,6 +187,8 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
   String _fechaHoraLote = '';
   int _tiempoCargaLote = 0;
 
+  final Set<int> _panelExpandido = {};
+
   late CatarataClassifier _classifier;
   final ImagePicker _picker = ImagePicker();
 
@@ -209,7 +206,6 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
 
   Future<void> _seleccionarImagen() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
@@ -217,10 +213,10 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
         _diagnostico = '';
         _modoLote = false;
         _resultadosLote = [];
+        _panelExpandido.clear();
       });
 
       _mostrarModalProgreso(mensaje: 'Analizando imagen...', progreso: null);
-
       final analisis = await _classifier.clasificarRetina(_image!);
 
       try {
@@ -251,7 +247,6 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
 
   Future<void> _seleccionarLote() async {
     final List<XFile> pickedFiles = await _picker.pickMultiImage(limit: 50);
-
     if (pickedFiles.isEmpty) return;
 
     final String fechaInicio = DateTime.now().toString().substring(0, 19);
@@ -263,6 +258,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
       _image = null;
       _resultadosLote = [];
       _fechaHoraLote = fechaInicio;
+      _panelExpandido.clear();
     });
 
     final int total = pickedFiles.length;
@@ -287,11 +283,16 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
 
       resultados.add(ResultadoLote(
         nombreArchivo: pickedFiles[i].name,
+        rutaArchivo: pickedFiles[i].path,
         diagnostico: analisis['diagnostico'],
         confianza: analisis['confianza'],
         nivelConfianza: analisis['nivelConfianza'],
         noConcluyente: analisis['noConcluyente'],
         tiempoInferencia: analisis['tiempoInferencia'],
+        tiempoPreprocesamiento: analisis['tiempoPreprocesamiento'],
+        tiempoTotal: analisis['tiempoTotal'],
+        tamanoImagen: analisis['tamanoImagen'],
+        fechaHora: analisis['fechaHora'],
       ));
 
       setState(() => _resultadosLote = List.from(resultados));
@@ -415,7 +416,66 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
       _modoLote = false;
       _fechaHoraLote = '';
       _tiempoCargaLote = 0;
+      _panelExpandido.clear();
     });
+  }
+
+  void _verImagenLote(BuildContext context, String rutaArchivo, String nombreArchivo) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      nombreArchivo,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 400,
+              child: InteractiveViewer(
+                minScale: 1.0,
+                maxScale: 4.0,
+                child: Image.file(
+                  File(rutaArchivo),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.pinch, size: 14, color: Colors.white54),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Pellizca para hacer zoom',
+                    style: TextStyle(fontSize: 12, color: Colors.white54),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Color _colorConfianza(String nivel) {
@@ -451,7 +511,11 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
                   child: _image != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(20),
-                          child: Image.file(_image!, fit: BoxFit.cover),
+                          child: InteractiveViewer(
+                            minScale: 1.0,
+                            maxScale: 4.0,
+                            child: Image.file(_image!, fit: BoxFit.cover),
+                          ),
                         )
                       : const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -461,6 +525,22 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
                             Text('No hay imagen cargada', style: TextStyle(color: Colors.grey)),
                           ],
                         ),
+                ),
+
+              if (!_modoLote && _image != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.pinch, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Pellizca para hacer zoom',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
                 ),
 
               if (!_modoLote) const SizedBox(height: 15),
@@ -707,67 +787,166 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
                         ..._resultadosLote.asMap().entries.map((entry) {
                           final i = entry.key;
                           final r = entry.value;
+                          final expandido = _panelExpandido.contains(i);
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: Colors.grey[50],
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: Colors.grey.shade200),
                             ),
-                            child: Row(
+                            child: Column(
                               children: [
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    color: Colors.teal,
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Center(
-                                    child: Text('${i + 1}',
-                                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        r.nombreArchivo,
-                                        style: const TextStyle(fontSize: 12),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        r.diagnostico,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: r.diagnostico.contains('Normal') ? Colors.green : Colors.red[800],
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(10),
+                                  onTap: () {
+                                    setState(() {
+                                      if (expandido) {
+                                        _panelExpandido.remove(i);
+                                      } else {
+                                        _panelExpandido.add(i);
+                                      }
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => _verImagenLote(context, r.rutaArchivo, r.nombreArchivo),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: Image.file(
+                                              File(r.rutaArchivo),
+                                              width: 48,
+                                              height: 48,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                r.nombreArchivo,
+                                                style: const TextStyle(fontSize: 12),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                r.diagnostico,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: r.diagnostico.contains('Normal') ? Colors.green : Colors.red[800],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              '${r.confianza.toStringAsFixed(1)}%',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                                color: _colorConfianza(r.nivelConfianza),
+                                              ),
+                                            ),
+                                            Text(
+                                              '${r.tiempoInferencia} ms',
+                                              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          expandido ? Icons.expand_less : Icons.expand_more,
+                                          color: Colors.teal,
+                                          size: 20,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      '${r.confianza.toStringAsFixed(1)}%',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: _colorConfianza(r.nivelConfianza),
-                                      ),
+                                if (expandido)
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      border: Border(top: BorderSide(color: Colors.grey.shade200)),
                                     ),
-                                    Text(
-                                      '${r.tiempoInferencia} ms',
-                                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => _verImagenLote(context, r.rutaArchivo, r.nombreArchivo),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: Stack(
+                                              children: [
+                                                Image.file(
+                                                  File(r.rutaArchivo),
+                                                  width: double.infinity,
+                                                  height: 160,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                                Positioned(
+                                                  bottom: 8,
+                                                  right: 8,
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black54,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: const Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        Icon(Icons.zoom_in, color: Colors.white, size: 14),
+                                                        SizedBox(width: 4),
+                                                        Text('Ver imagen', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text('Panel Técnico',
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal.shade700)),
+                                        const SizedBox(height: 8),
+                                        _filaTecnicaSmall('Tamaño imagen', r.tamanoImagen, Icons.photo_size_select_large),
+                                        _filaTecnicaSmall('Fecha y hora', r.fechaHora, Icons.access_time),
+                                        _filaTecnicaSmall('Preprocesamiento', '${r.tiempoPreprocesamiento} ms', Icons.tune),
+                                        _filaTecnicaSmall('Inferencia', '${r.tiempoInferencia} ms', Icons.speed),
+                                        _filaTecnicaSmall('Tiempo total', '${r.tiempoTotal} ms', Icons.timer_outlined),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.check_circle_outline,
+                                              size: 14,
+                                              color: r.tiempoInferencia <= 200 ? Colors.green : Colors.orange,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              r.tiempoInferencia <= 200 ? '< 200ms ✓' : '> 200ms ✗',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: r.tiempoInferencia <= 200 ? Colors.green : Colors.orange,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
                               ],
                             ),
                           );
@@ -925,6 +1104,20 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
           const SizedBox(width: 10),
           Expanded(child: Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600]))),
           Text(valor, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _filaTecnicaSmall(String label, String valor, IconData icono) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(icono, size: 14, color: Colors.teal),
+          const SizedBox(width: 8),
+          Expanded(child: Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
+          Text(valor, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
         ],
       ),
     );
