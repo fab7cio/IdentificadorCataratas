@@ -6,7 +6,7 @@ Aplicación móvil desarrollada en Flutter para la clasificación automática de
 
 ## 📋 Descripción
 
-Esta herramienta permite a oftalmólogos cargar imágenes retinales y obtener un diagnóstico automático del tipo de catarata presente, con indicador de confianza, barras de probabilidad por clase y métricas de rendimiento en tiempo real. Soporta análisis de imagen individual y clasificación en lote de hasta 50 imágenes.
+Esta herramienta permite a oftalmólogos cargar imágenes retinales y obtener un diagnóstico automático del tipo de catarata presente, con indicador de confianza, barras de probabilidad por clase y métricas de rendimiento en tiempo real. Soporta análisis de imagen individual y clasificación en lote de hasta 20 imágenes.
 
 ---
 
@@ -25,21 +25,23 @@ Esta herramienta permite a oftalmólogos cargar imágenes retinales y obtener un
 - Framework de entrenamiento: **TensorFlow / Keras**
 - Formato de despliegue: **TFLite**
 - Precisión obtenida: **92%**
-- Normalización: ImageNet (media y desviación estándar por canal)
 - Clases: 4 (Cortical, Normal, Nuclear, Subcapsular)
 
 ---
 
 ## 📱 Funcionalidades
 
-- Carga de imagen individual desde galería
-- Clasificación en lote de hasta 50 imágenes
+- Pantalla de bienvenida animada (splash screen)
+- Carga de imagen individual desde galería con zoom (pellizco hasta 4x)
+- Clasificación en lote de hasta 20 imágenes con modal de progreso animado
+- Vista de imagen por resultado en lote con zoom hasta 4x
 - Diagnóstico con porcentaje de confianza y nivel (Alta / Moderada / Baja)
 - Barras de probabilidad para las 4 clases ordenadas de mayor a menor
 - Aviso de resultado no concluyente cuando la confianza es menor al 70%
-- Panel técnico individual: tiempos de preprocesamiento, inferencia, carga del modelo, RAM, fecha y hora
-- Panel técnico de lote: inferencia promedio, inferencia total, total de imágenes procesadas
-- Indicador de cumplimiento del umbral de latencia (< 200ms)
+- Panel técnico individual: preprocesamiento, inferencia, carga del modelo, RAM, tamaño de imagen, fecha y hora
+- Panel técnico por imagen en lote (expandible por tap)
+- Panel técnico general de lote: inferencia promedio, inferencia total, total de imágenes procesadas
+- Indicador de cumplimiento del umbral de latencia (< 200ms) por imagen y por lote
 
 ---
 
