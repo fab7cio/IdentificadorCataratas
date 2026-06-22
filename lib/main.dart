@@ -246,7 +246,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
   }
 
   Future<void> _seleccionarLote() async {
-    final List<XFile> pickedFiles = await _picker.pickMultiImage(limit: 50);
+    final List<XFile> pickedFiles = await _picker.pickMultiImage(limit: 20);
     if (pickedFiles.isEmpty) return;
 
     final String fechaInicio = DateTime.now().toString().substring(0, 19);
@@ -296,6 +296,8 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
       ));
 
       setState(() => _resultadosLote = List.from(resultados));
+      if (!mounted) break;
+      await Future.delayed(const Duration(milliseconds: 30));
     }
 
     if (mounted) Navigator.of(context).pop();
@@ -347,6 +349,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     } else {
       if (_actualizarModal != null) {
         _actualizarModal!(() {
+          if (!mounted) return;
           _mensajeModal = mensaje;
           _progresoModal = progreso;
           _actualModal = actual;

@@ -43,7 +43,7 @@ class CatarataClassifier {
         'tiempoInferencia': 0,
         'tiempoTotal': 0,
         'tiempoCarga': _tiempoCarga,
-        'fechaHora': DateTime.now().toString(),
+        'fechaHora': DateTime.now().toString().substring(0, 19),
         'tamanoImagen': '',
       };
     }
@@ -65,7 +65,7 @@ class CatarataClassifier {
         'tiempoInferencia': 0,
         'tiempoTotal': 0,
         'tiempoCarga': _tiempoCarga,
-        'fechaHora': DateTime.now().toString(),
+        'fechaHora': DateTime.now().toString().substring(0, 19),
         'tamanoImagen': '',
       };
     }
@@ -73,25 +73,18 @@ class CatarataClassifier {
     final String tamanoImagen = '${originalImage.width} x ${originalImage.height} px';
     final img.Image resizedImage = img.copyResize(originalImage, width: 224, height: 224);
 
-    var input = List.generate(
-      1,
-      (_) => List.generate(
-        224,
-        (_) => List.generate(
-          224,
-          (_) => List.filled(3, 0.0),
-        ),
-      ),
-    );
-
+    final Float32List inputBuffer = Float32List(1 * 224 * 224 * 3);
+    int idx = 0;
     for (int y = 0; y < 224; y++) {
       for (int x = 0; x < 224; x++) {
         final pixel = resizedImage.getPixel(x, y);
-        input[0][y][x][0] = (pixel.r / 255.0 - 0.485) / 0.229;
-        input[0][y][x][1] = (pixel.g / 255.0 - 0.456) / 0.224;
-        input[0][y][x][2] = (pixel.b / 255.0 - 0.406) / 0.225;
+        inputBuffer[idx++] = (pixel.r / 255.0 - 0.485) / 0.229;
+        inputBuffer[idx++] = (pixel.g / 255.0 - 0.456) / 0.224;
+        inputBuffer[idx++] = (pixel.b / 255.0 - 0.406) / 0.225;
       }
     }
+
+    final input = inputBuffer.reshape([1, 224, 224, 3]);
 
     swPre.stop();
     final int tiempoPreprocesamiento = swPre.elapsedMilliseconds;
